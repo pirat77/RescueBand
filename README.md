@@ -1,13 +1,19 @@
 # RescueBand
+
 Development of distributed, disruption resilent monitoring system meant for menagment of large scale medical events and operations in extreme environements
 
 # Team
-Jan Mikos - Modeling, system analitics, network structure, software development 
+
+Jan Mikos - Modeling, system analitics, network structure, software development
+
 Lukasz Furman - Hardware, design, sensometrics, low level software development
+
 Marek Tomaszewski - User Experience, project menagement, smartphone application development
+
 Krystian Dereziniski - Consulting, market analytics, marketing, resarch 
 
 # Lisence
+
 Creative Commons Attribution-ShareAlike 4.0 International Public License
 
 By exercising the Licensed Rights (defined below), You accept and agree to be bound by the terms and conditions of this Creative Commons Attribution-ShareAlike 4.0 International Public License ("Public License"). To the extent this Public License may be interpreted as a contract, You are granted the Licensed Rights in consideration of Your acceptance of these terms and conditions, and the Licensor grants You such rights in consideration of benefits the Licensor receives from making the Licensed Material available under these terms and conditions.
