@@ -8,6 +8,7 @@
 #define SATURATION_ECHO 3
 #define BREATHRATE_ECHO 4
 #define SYSTOLICBP_ECHO 5
+#define LED_OUTPUT 6
 
 void setup() {
   Serial.begin(115200);
@@ -16,37 +17,43 @@ void setup() {
   pinMode(SATURATION_ECHO, INPUT);
   pinMode(BREATHRATE_ECHO, INPUT);
   pinMode(SYSTOLICBP_ECHO, INPUT);
+  pinMode(LED_OUTPUT, OUTPUT);
 
+
+  // TODO: find apropiate wifi library
   WiFiManager wifiManager;
 }
 
+ // TODO: implement sensometric funtions
+ // TODO: store sensometrics to file
+
 float readPulse(){
   float pulse;
-  // read from sensors
+  // read from sensors (BPM)
   return pulse;
 }
 
 float readSystolicBP(){
   float systolicBP;
-  // measure systolicBP
+  // measure systolicBP (mmHG)
   return systolicBP;
 }
 
 float readTemprature(){
   float temprature;
-  // read from sensors
+  // read from sensors (Celscius Degree)
   return temprature;
 }
 
 float readSaturation(){
   float saturation;
-  // read from sensors
+  // read from sensors (SpO2)
   return saturation;
 }
 
 float readBreathRate(){
   float breathrate;
-  // read from sensors
+  // read from sensors (breaths/min)
   return breathrate;
 }
 
@@ -95,8 +102,8 @@ int bPMScore(){
 }
 
 int adnotationScore(){
-   // read adnotation
-   // map adnotation into adnotation;
+   // TODO: read adnotation from file
+   // map adnotation into adnotationScore;
    int adnotationScore;
 
   enum adnotationValue{
@@ -113,6 +120,8 @@ float calculateEarlyWarningScore(){
   
   int earlyWarningScore = bPMScore() + tempratureScore() + pulseScore() + saturationScore() + breathScore() + adnotationScore();
   
+  // TODO: store historic score to file
+
   return earlyWarningScore;
 }
 
@@ -145,16 +154,20 @@ int transformScoreIntoDelay(int warningScore){
     return 100;
   case 12:
     return 10;   
+  default:
+    return 0;
   }
 }
 
 boolean compareToHistoric(float warningScore){
+  // TODO: asses fluctuation of patients state
   // read historic warning score
   // compare and make decision
   // return 
 }
 
-void callForHelp(float warningScore){
+void callForHelp(int warningScore){
+  // TODO: search for apropiate caregiver
   // rescue protocol
 }
 
