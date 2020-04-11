@@ -3,18 +3,33 @@
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
+#define PULSE_ECHO 1
+#define TEMPRATURE_ECHO 2
+#define SATURATION_ECHO 3
+#define BREATHRATE_ECHO 4
+#define SYSTOLICBP_ECHO 5
 
 void setup() {
   Serial.begin(115200);
-  WiFiManager wifiManager;
+  pinMode(PULSE_ECHO, INPUT);
+  pinMode(TEMPRATURE_ECHO, INPUT);
+  pinMode(SATURATION_ECHO, INPUT);
+  pinMode(BREATHRATE_ECHO, INPUT);
+  pinMode(SYSTOLICBP_ECHO, INPUT);
 
-  // put your setup code here, to run once:
+  WiFiManager wifiManager;
 }
 
 float readPulse(){
   float pulse;
   // read from sensors
   return pulse;
+}
+
+float readSystolicBP(){
+  float systolicBP;
+  // measure systolicBP
+  return systolicBP;
 }
 
 float readTemprature(){
@@ -35,28 +50,102 @@ float readBreathRate(){
   return breathrate;
 }
 
+int breathScore(){
+  float breathrate = readBreathRate();
+  if(breathrate>35) return 3;
+  if(breathrate>30) return 2;
+  if(breathrate>20) return 1;
+  if(breathrate<7) return 3;
+  return 0;
+  }
+
+int saturationScore(){
+  float saturation = readSaturation();
+  if(saturation<85) return 3;
+  if(saturation<89) return 2;
+  if(saturation<92) return 1;
+  return 0;
+}
+
+int pulseScore(){
+  float pulse = readPulse();
+  if(pulse>129) return 3;
+  if(pulse>109) return 2;
+  if(pulse>99) return 1;
+  if(pulse<50) return 1;
+  return 0; 
+}
+
+int tempratureScore(){
+  float temprature = readTemprature();
+  if(temprature>38.9) return 2;
+  if(temprature>37.9) return 1;
+  if(temprature<36) return 1;
+  if(temprature<35) return 2;
+  if(temprature<34) return 3;
+}
+
+int bPMScore(){ 
+  float systolicBP = readSystolicBP();
+  if(systolicBP>199) return 2;
+  if(systolicBP<100) return 1;
+  if(systolicBP<80) return 2;
+  if(systolicBP<70) return 3;
+  return 0;
+}
+
+int adnotationScore(){
+   // read adnotation
+   // map adnotation into adnotation;
+   int adnotationScore;
+
+  enum adnotationValue{
+    Alert,
+    Verbal,
+    Pain,
+    Unresponsive
+  };
+
+  return adnotationScore;
+}
+
 float calculateEarlyWarningScore(){
   
-  float earlyWarningScore;
-  float brathrate = readBreathRate();
-  float saturation = readSaturation();
-  float pulse = readPulse();
-  float temprature = readTemprature();
-  // calculation process
-  // save results
+  int earlyWarningScore = bPMScore() + tempratureScore() + pulseScore() + saturationScore() + breathScore() + adnotationScore();
+  
   return earlyWarningScore;
 }
 
-void idleSleep(int time){
-  // shutdown sensors and wifi
-  delay(time);
-  // activate sensors and wifi
-}
-
-int transformScoreIntoDelay(float warningScore){
-  int delay;
-  // transformation 1->24h 2-12h 3-6h 4-3h 5-90m 6-45m 7-25m 8-12m 9-6min 10=3min 11-1min 12->1s
-  return delay;
+int transformScoreIntoDelay(int warningScore){
+  switch (warningScore)
+  {
+  case 0:
+    return 21600000;    
+  case 1:
+    return 10800000;
+  case 2: 
+    return 3600000;
+  case 3:
+    return 600000;
+  case 4:
+    return 300000;
+  case 5: 
+    return 60000;
+  case 6: 
+    return 30000;
+  case 7:
+    return 15000;
+  case 8:
+    return 5000;
+  case 9:
+    return 1000;
+  case 10:
+    return 500;
+  case 11:
+    return 100;
+  case 12:
+    return 10;   
+  }
 }
 
 boolean compareToHistoric(float warningScore){
@@ -70,14 +159,12 @@ void callForHelp(float warningScore){
 }
 
 void loop() {
-  float warningScore = calculateEarlyWarningScore();
+  int warningScore = calculateEarlyWarningScore();
   if (compareToHistoric(warningScore)) {
     callForHelp(warningScore);
   }
-  // map earlywWrningScore to interval
-  int time = transformScoreIntoDelay(earlyWarningScore);
-  idleSleep(time);
-
-
-  // put your main code here, to run repeatedly:
+  int timeInterval = transformScoreIntoDelay(warningScore);
+  if(timeInterval<60000){
+    delay(timeInterval);
+  } else {ESP.deepSleep(timeInterval);}
 }
