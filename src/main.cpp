@@ -1,8 +1,11 @@
 #include <Arduino.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
+
 #define PULSE_ECHO 1
 #define TEMPRATURE_ECHO 2
 #define SATURATION_ECHO 3
@@ -10,22 +13,29 @@
 #define SYSTOLICBP_ECHO 5
 #define LED_OUTPUT 6
 
+OneWire oneWire(TEMPRATURE_ECHO);
+DallasTemperature tempSensors(&oneWire);
+uint32_t timeUNIX;
+uint32_t last_NTP;
+
 void setup() {
   Serial.begin(115200);
   pinMode(PULSE_ECHO, INPUT);
   pinMode(TEMPRATURE_ECHO, INPUT);
   pinMode(SATURATION_ECHO, INPUT);
-  pinMode(BREATHRATE_ECHO, INPUT);
-  pinMode(SYSTOLICBP_ECHO, INPUT);
+  pinMode(BREATHRATE_ECHO, INPUT); 
+  pinMode(SYSTOLICBP_ECHO, INPUT); 
   pinMode(LED_OUTPUT, OUTPUT);
-
 
   // TODO: find apropiate wifi library
   WiFiManager wifiManager;
+
+  tempSensors.setWaitForConversion(true);
+  tempSensors.begin();  
+
 }
 
- // TODO: implement sensometric funtions
- // TODO: store sensometrics to file
+ // TODO: implement sensometric funtions (temp done)
 
 float readPulse(){
   float pulse;
@@ -40,8 +50,8 @@ float readSystolicBP(){
 }
 
 float readTemprature(){
-  float temprature;
-  // read from sensors (Celscius Degree)
+  tempSensors.requestTemperatures();
+  float temprature = tempSensors.getTempCByIndex(0);
   return temprature;
 }
 
@@ -57,6 +67,24 @@ float readBreathRate(){
   return breathrate;
 }
 
+void saveToLog(int earlyWarningScore){
+  File log = SPIFFS.open("/log.csv", "a"); 
+      log.print(millis());
+      log.print(',');
+      log.print(readTemprature());
+      log.print(',');
+      log.print(readPulse());
+      log.print(',');
+      log.print(readBreathRate());
+      log.print(',');
+      log.print(readSaturation());
+      log.print(',');
+      log.print(readSystolicBP());
+      log.print(',');
+      log.println(earlyWarningScore);
+      log.close();
+}
+
 int breathScore(){
   float breathrate = readBreathRate();
   if(breathrate>35) return 3;
@@ -64,7 +92,7 @@ int breathScore(){
   if(breathrate>20) return 1;
   if(breathrate<7) return 3;
   return 0;
-  }
+}
 
 int saturationScore(){
   float saturation = readSaturation();
@@ -117,11 +145,8 @@ int adnotationScore(){
 }
 
 float calculateEarlyWarningScore(){
-  
   int earlyWarningScore = bPMScore() + tempratureScore() + pulseScore() + saturationScore() + breathScore() + adnotationScore();
-  
-  // TODO: store historic score to file
-
+  saveToLog(earlyWarningScore);
   return earlyWarningScore;
 }
 
@@ -159,7 +184,7 @@ int transformScoreIntoDelay(int warningScore){
   }
 }
 
-boolean compareToHistoric(float warningScore){
+boolean compareToHistoric(int warningScore){
   // TODO: asses fluctuation of patients state
   // read historic warning score
   // compare and make decision
