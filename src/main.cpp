@@ -29,7 +29,7 @@ enum adnotationValue{
 };
 
 int getEnumKeyByStringValue(String myValue){
-   for (int i = alert; int i = unresponsive+1; i++){
+   for (int i = alert; i = unresponsive+1; i++){
     if (static_cast<String>(adnotationValue(i)) == myValue) 
       return i; 
    }
@@ -151,25 +151,6 @@ int bPMScore(){
   return 0;
 }
 
-int adnotationScore(){
-  String values[] = {"", "", ""};
-  std::string last_adnotation = getLastAdnotation();
-  char lineArray[last_adnotation.size() + 1];
-  strcpy(lineArray, last_adnotation.c_str());
-  int valueID = 0;  
-  for (int i = 0; i<last_adnotation.size()+1; i++){
-      if (lineArray[i]= ','){valueID++;}
-      else {values[valueID] += lineArray[i];}
-  } 
-  return getEnumKeyByStringValue(values[1]);
-}
-
-float calculateEarlyWarningScore(){
-  int earlyWarningScore = bPMScore() + tempratureScore() + pulseScore() + saturationScore() + breathScore() + adnotationScore();
-  saveToLog(earlyWarningScore);
-  return earlyWarningScore;
-}
-
 std::string getLastAdnotation(){
   std::string last_line;
   std::ifstream infile("/adnotations.csv");
@@ -179,6 +160,25 @@ std::string getLastAdnotation(){
   }
   infile.close();
   return last_line;
+}
+
+int adnotationScore(){
+  String values[] = {"", "", ""};
+  std::string last_adnotation = getLastAdnotation();
+  char lineArray[last_adnotation.size() + 1];
+  strcpy(lineArray, last_adnotation.c_str());
+  int valueID = 0;  
+  for (int i = 0; i<last_adnotation.size()+1; i++){
+      if (lineArray[i]==',') valueID++;
+      else values[valueID] += lineArray[i];
+  } 
+  return getEnumKeyByStringValue(values[1]);
+}
+
+float calculateEarlyWarningScore(){
+  int earlyWarningScore = bPMScore() + tempratureScore() + pulseScore() + saturationScore() + breathScore() + adnotationScore();
+  saveToLog(earlyWarningScore);
+  return earlyWarningScore;
 }
 
 int transformScoreIntoDelay(int warningScore){
