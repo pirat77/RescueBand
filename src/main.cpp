@@ -1,4 +1,7 @@
 #include <Arduino.h>
+#include <fstream>
+#include <string>
+#include <vector>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
@@ -17,6 +20,25 @@ OneWire oneWire(TEMPRATURE_ECHO);
 DallasTemperature tempSensors(&oneWire);
 uint32_t timeUNIX;
 uint32_t last_NTP;
+
+enum adnotationValue{
+  alert = 'Alert',
+  verbal = 'Verbal',
+  pain = 'Pain',
+  unresponsive = 'Unresponsive'
+};
+
+int getEnumKeyByStringValue(String myValue){
+   for (int i = alert; int i = unresponsive+1; i++){
+    if (static_cast<String>(adnotationValue(i)) == myValue) 
+      return i; 
+   }
+   return 0;
+}
+
+// TODO: extrackt libraries from main.cpp
+
+// TODO: implement UNIX time handling and separate logs for every day
 
 void setup() {
   Serial.begin(115200);
@@ -130,24 +152,33 @@ int bPMScore(){
 }
 
 int adnotationScore(){
-   // TODO: read adnotation from file
-   // map adnotation into adnotationScore;
-   int adnotationScore;
-
-  enum adnotationValue{
-    Alert,
-    Verbal,
-    Pain,
-    Unresponsive
-  };
-
-  return adnotationScore;
+  String values[] = {"", "", ""};
+  std::string last_adnotation = getLastAdnotation();
+  char lineArray[last_adnotation.size() + 1];
+  strcpy(lineArray, last_adnotation.c_str());
+  int valueID = 0;  
+  for (int i = 0; i<last_adnotation.size()+1; i++){
+      if (lineArray[i]= ','){valueID++;}
+      else {values[valueID] += lineArray[i];}
+  } 
+  return getEnumKeyByStringValue(values[1]);
 }
 
 float calculateEarlyWarningScore(){
   int earlyWarningScore = bPMScore() + tempratureScore() + pulseScore() + saturationScore() + breathScore() + adnotationScore();
   saveToLog(earlyWarningScore);
   return earlyWarningScore;
+}
+
+std::string getLastAdnotation(){
+  std::string last_line;
+  std::ifstream infile("/adnotations.csv");
+  std::string line;
+  while (std::getline(infile, line)){
+    if (line.c_str() != NULL) last_line = line;
+  }
+  infile.close();
+  return last_line;
 }
 
 int transformScoreIntoDelay(int warningScore){
@@ -184,6 +215,11 @@ int transformScoreIntoDelay(int warningScore){
   }
 }
 
+void batteryCheck(){
+  // TODO: Battery Check
+
+}
+
 boolean compareToHistoric(int warningScore){
   // TODO: asses fluctuation of patients state
   // read historic warning score
@@ -196,12 +232,23 @@ void callForHelp(int warningScore){
   // rescue protocol
 }
 
+void saveAdnotation(int state, String comment){
+  File adnotations = SPIFFS.open("/adnotations.csv", "a"); 
+      adnotations.print(millis());
+      adnotations.print(',');
+      adnotations.print(adnotationValue(state)); 
+      adnotations.print(',');
+      adnotations.println(comment);
+      adnotations.close();
+}
+
 void loop() {
   int warningScore = calculateEarlyWarningScore();
   if (compareToHistoric(warningScore)) {
     callForHelp(warningScore);
   }
   int timeInterval = transformScoreIntoDelay(warningScore);
+  batteryCheck();
   if(timeInterval<60000){
     delay(timeInterval);
   } else {ESP.deepSleep(timeInterval);}
