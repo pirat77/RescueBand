@@ -13,7 +13,7 @@ enum adnotationValue{
 };
 
 int getEnumKeyByStringValue(String myValue){
-   for (int i = alert; i = outofspace; i++){
+   for (int i = alert; i < outofspace; i++){
     if (static_cast<String>(adnotationValue(i)) == myValue){return i;}  
    }
    return 0;
