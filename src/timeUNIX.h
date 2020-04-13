@@ -1,0 +1,1 @@
+int transformScoreIntoDelay(int warningScore);
